@@ -1,0 +1,22 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      FSTAR_VERSION: v2026.07.12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install F*
+        run: |
+          curl -sSfL "https://github.com/FStarLang/FStar/releases/download/${FSTAR_VERSION}/fstar-${FSTAR_VERSION}-Linux-x86_64.tar.gz" \
+            | tar xz -C "$HOME"
+          echo "$HOME/fstar/bin" >> "$GITHUB_PATH"
+
+      - name: Verify
+        run: make

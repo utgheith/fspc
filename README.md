@@ -1,5 +1,7 @@
 # ParserCombinators
 
+[![Verify](https://github.com/utgheith/fspc/actions/workflows/verify.yml/badge.svg)](https://github.com/utgheith/fspc/actions/workflows/verify.yml)
+
 A small, total parser-combinator library for [F*](https://fstar-lang.org),
 generic in the token type.
 
