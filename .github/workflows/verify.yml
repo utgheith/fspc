@@ -2,7 +2,14 @@ name: Verify
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+
+# Cancel any older, pending runs if you push a new commit to the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
@@ -12,11 +19,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Cache the F* compiler binaries to avoid downloading them every time
+      - name: Cache F* Binary
+        id: cache-fstar
+        uses: actions/cache@v4
+        with:
+          path: ~/fstar
+          key: fstar-${{ env.FSTAR_VERSION }}-linux-x86_64
+
+      # Install F* only if it wasn't found in the cache
       - name: Install F*
+        if: steps.cache-fstar.outputs.cache-hit != 'true'
         run: |
+          mkdir -p "$HOME/fstar"
           curl -sSfL "https://github.com/FStarLang/FStar/releases/download/${FSTAR_VERSION}/fstar-${FSTAR_VERSION}-Linux-x86_64.tar.gz" \
-            | tar xz -C "$HOME"
-          echo "$HOME/fstar/bin" >> "$GITHUB_PATH"
+            | tar xz -C "$HOME/fstar" --strip-components=2
+
+      # Add F* to the system PATH (runs whether cache hits or misses)
+      - name: Add F* to Path
+        run: echo "$HOME/fstar/bin" >> "$GITHUB_PATH"
+
+      # Cache your F* build output (_cache/) to speed up consecutive verifications
+      - name: Cache F* Build Artifacts
+        uses: actions/cache@v4
+        with:
+          path: _cache
+          key: fstar-build-${{ env.FSTAR_VERSION }}-${{ github.sha }}
+          restore-keys: |
+            fstar-build-${{ env.FSTAR_VERSION }}-
 
       - name: Verify
         run: make
